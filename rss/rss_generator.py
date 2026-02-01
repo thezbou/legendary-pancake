@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
@@ -19,9 +20,9 @@ response = requests.get(TARGET_URL, headers=HEADERS)
 soup = BeautifulSoup(response.text, "html.parser")
 rss = ET.Element("rss", version="2.0")
 channel = ET.SubElement(rss, "channel")
-ET.SubElement(channel, "title").text = "EnglishJobs - Empleos con ingl‚s en Comunidad de Madrid"
+ET.SubElement(channel, "title").text = "EnglishJobs - Empleos con inglâ€šs en Comunidad de Madrid"
 ET.SubElement(channel, "link").text = TARGET_URL
-ET.SubElement(channel, "description").text = "Ofertas con ingl‚s publicadas en los £ltimos 30 d¡as"
+ET.SubElement(channel, "description").text = "Ofertas con inglâ€šs publicadas en los Â£ltimos 30 dÂ¡as"
 ET.SubElement(channel, "language").text = "es"
 ET.SubElement(channel, "lastBuildDate").text = datetime.utcnow().strftime("%%a, %%d %%b %%Y %%H:%%M:%%S GMT")
 offers = soup.select("div.job")
@@ -45,3 +46,4 @@ for offer in offers:
 tree = ET.ElementTree(rss)
 tree.write("rss/englishjobs_madrid.xml", encoding="utf-8", xml_declaration=True)
 print("RSS generado en rss/englishjobs_madrid.xml")
+
