@@ -37,6 +37,7 @@ jobs:
     git add rss/englishjobs_madrid.xml
     git commit -m "Actualizar RSS automáticamente [skip ci]" || git commit --allow-empty -m "Crear RSS por primera vez"
     git push "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+    
       - name: Commit y push del RSS
         run: |
           git config --global user.name "github-actions[bot]"
