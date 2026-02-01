@@ -1,53 +1,39 @@
-# -*- coding: utf-8 -*-
-import requests
-from bs4 import BeautifulSoup
-from datetime import datetime
-import xml.etree.ElementTree as ET
+name: Update EnglishJobs RSS
 
-# URL principal
-URL = "https://englishjobs.es/in/comunidad-de-madrid"
-HEADERS = {"User-Agent": "Mozilla/5.0"}
+# Se ejecuta cada 6 horas y también manualmente
+on:
+  schedule:
+    - cron: '0 */6 * * *'   # Cada 6 horas
+  workflow_dispatch:
 
-# Hacer request
-response = requests.get(URL, headers=HEADERS)
-soup = BeautifulSoup(response.text, "html.parser")
+jobs:
+  build:
+    runs-on: ubuntu-latest
 
-# Crear estructura RSS
-rss = ET.Element("rss", version="2.0")
-channel = ET.SubElement(rss, "channel")
+    steps:
+      # 1️⃣ Clonar el repositorio
+      - uses: actions/checkout@v3
 
-ET.SubElement(channel, "title").text = "EnglishJobs – Empleos en Comunidad de Madrid"
-ET.SubElement(channel, "link").text = URL
-ET.SubElement(channel, "description").text = "Feed RSS generado de EnglishJobs: empleos que requieren inglés en Comunidad de Madrid"
-ET.SubElement(channel, "language").text = "es"
-ET.SubElement(channel, "lastBuildDate").text = datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S GMT")
+      # 2️⃣ Configurar Python
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
 
-# Encontrar ofertas
-offers = soup.select("div.job")
+      # 3️⃣ Instalar dependencias
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4
 
-for offer in offers:
-    title_tag = offer.find("a")
-    if not title_tag:
-        continue
+      # 4️⃣ Ejecutar script Python
+      - name: Ejecutar script RSS
+        run: python rss/rss_generator.py
 
-    title = title_tag.get_text(strip=True)
-    link = title_tag.get("href")
-    if link and not link.startswith("http"):
-        link = "https://englishjobs.es" + link
-
-    pubDate = offer.select_one("span.date")
-    pubDate_text = pubDate.get_text(strip=True) if pubDate else datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S GMT")
-
-    # Crear item RSS
-    item = ET.SubElement(channel, "item")
-    ET.SubElement(item, "title").text = title
-    ET.SubElement(item, "link").text = link
-    ET.SubElement(item, "guid").text = link
-    ET.SubElement(item, "description").text = f"Oferta de empleo: {title}"
-    ET.SubElement(item, "pubDate").text = pubDate_text
-
-# Guardar XML
-tree = ET.ElementTree(rss)
-tree.write("rss/englishjobs_madrid.xml", encoding="utf-8", xml_declaration=True)
-
-print("Feed generado: rss/englishjobs_madrid.xml")
+      # 5️⃣ Commit y push del RSS usando GITHUB_TOKEN
+      - name: Commit y push del RSS
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add rss/englishjobs_madrid.xml
+          git commit -m "Actualizar RSS automáticamente [skip ci]" || git commit --allow-empty -m "Crear RSS por primera vez"
+          git push "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
